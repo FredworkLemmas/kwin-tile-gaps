@@ -199,7 +199,7 @@ function applyGaps(client) {
 
     const clientGeometries = workspace.windowList().reduce((acc, c) => {
         if (!ignoreClient(c)) {
-            acc[c.pid] = Object.assign({}, c.frameGeometry);
+            acc[c.internalId] = Object.assign({}, c.frameGeometry);
         }
         return acc;
     }, {});
@@ -208,9 +208,9 @@ function applyGaps(client) {
     applyGapsWindows(client, clientGeometries);
 
     for (const c of workspace.windowList()) {
-        if (c.pid in clientGeometries && c.frameGeometry != clientGeometries[c.pid]) {
-            debug("set geometry", caption(c), geometry(clientGeometries[c.pid]));
-            c.frameGeometry = clientGeometries[c.pid];
+        if (c.internalId in clientGeometries && c.frameGeometry != clientGeometries[c.internalId]) {
+            debug("set geometry", caption(c), geometry(clientGeometries[c.internalId]));
+            c.frameGeometry = clientGeometries[c.internalId];
         }
     }
 
@@ -220,7 +220,7 @@ function applyGaps(client) {
 }
 
 function applyGapsArea(client, clientGeometries) {
-    const clientGeometry = clientGeometries[client.pid];
+    const clientGeometry = clientGeometries[client.internalId];
     let area = getArea(client);
     debug("area", geometry(area));
     let grid = getGrid(client);
@@ -291,17 +291,17 @@ function applyGapsArea(client, clientGeometries) {
     // otherwise geo gapped on outer edges
     if (Object.keys(grid).every((edge) => anchored[edge]) && clientGeometry != gridded) {
         debug("set grid geometry", geometry(gridded));
-        clientGeometries[client.pid] = gridded;
+        clientGeometries[client.internalId] = gridded;
     } else if (clientGeometry != edged) {
         debug("set edge geometry", geometry(edged));
-        clientGeometries[client.pid] = edged;
+        clientGeometries[client.internalId] = edged;
     }
 }
 
 function applyGapsWindows(client1, clientGeometries) {
     let area = getArea(client1);
     let grid = getGrid(client1);
-    let win1 = clientGeometries[client1.pid];
+    let win1 = clientGeometries[client1.internalId];
 
     // for each other window, if they share an edge,
     // clip or extend both evenly to make the distance the size of the gap
@@ -312,7 +312,7 @@ function applyGapsWindows(client1, clientGeometries) {
         debug("checking", client2.caption);
         debug(geometry(client1), geometry(client2));
 
-        let win2 = clientGeometries[client2.pid];
+        let win2 = clientGeometries[client2.internalId];
         for (let i = 0; i < Object.keys(grid).length; i++) {
             let edge = Object.keys(grid)[i];
             switch (edge) {
@@ -379,8 +379,8 @@ function applyGapsWindows(client1, clientGeometries) {
             }
         }
 
-        clientGeometries[client1.pid] = win1;
-        clientGeometries[client2.pid] = win2;
+        clientGeometries[client1.internalId] = win1;
+        clientGeometries[client2.internalId] = win2;
     }
 }
 
