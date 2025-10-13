@@ -228,6 +228,12 @@ function applyGapsArea(client, clientGeometries) {
     let gridded = Object.assign({}, clientGeometry);
     let edged = Object.assign({}, clientGeometry);
 
+    // Ensure we're working with calculated right/bottom values
+    gridded.right = gridded.x + gridded.width;
+    gridded.bottom = gridded.y + gridded.height;
+    edged.right = edged.x + edged.width;
+    edged.bottom = edged.y + edged.height;
+
     // unmaximize if maximized window gap
     if (config.includeMaximized && maximized(client)) {
         debug("unmaximize");
@@ -249,34 +255,42 @@ function applyGapsArea(client, clientGeometries) {
                 switch (edge) {
 
                     case "left":
-                        gridded.width -= diff;
-                        gridded.x += diff;
+                        gridded.x = Math.round(gridded.x + diff);
+                        gridded.width = Math.round(gridded.width - diff);
+                        gridded.right = gridded.x + gridded.width;
                         if (pos.startsWith("full")) {
-                            edged.width -= diff;
-                            edged.x += diff;
+                            edged.x = Math.round(edged.x + diff);
+                            edged.width = Math.round(edged.width - diff);
+                            edged.right = edged.x + edged.width;
                         }
                         break;
 
                     case "right":
-                        gridded.width += diff;
+                        gridded.width = Math.round(gridded.width + diff);
+                        gridded.right = gridded.x + gridded.width;
                         if (pos.startsWith("full")) {
-                            edged.width += diff;
+                            edged.width = Math.round(edged.width + diff);
+                            edged.right = edged.x + edged.width;
                         }
                         break;
 
                     case "top":
-                        gridded.height -= diff;
-                        gridded.y += diff;
+                        gridded.y = Math.round(gridded.y + diff);
+                        gridded.height = Math.round(gridded.height - diff);
+                        gridded.bottom = gridded.y + gridded.height;
                         if (pos.startsWith("full")) {
-                            edged.height -= diff;
-                            edged.y += diff;
+                            edged.y = Math.round(edged.y + diff);
+                            edged.height = Math.round(edged.height - diff);
+                            edged.bottom = edged.y + edged.height;
                         }
                         break;
 
                     case "bottom":
-                        gridded.height += diff;
+                        gridded.height = Math.round(gridded.height + diff);
+                        gridded.bottom = gridded.y + gridded.height;
                         if (pos.startsWith("full")) {
-                            edged.height += diff;
+                            edged.height = Math.round(edged.height + diff);
+                            edged.bottom = edged.y + edged.height;
                         }
                         break;
 
@@ -303,6 +317,10 @@ function applyGapsWindows(client1, clientGeometries) {
     let grid = getGrid(client1);
     let win1 = clientGeometries[client1.internalId];
 
+    // Ensure calculated right/bottom values
+    win1.right = win1.x + win1.width;
+    win1.bottom = win1.y + win1.height;
+
     // for each other window, if they share an edge,
     // clip or extend both evenly to make the distance the size of the gap
     for (const client2 of workspace.windowList()) {
@@ -313,65 +331,80 @@ function applyGapsWindows(client1, clientGeometries) {
         debug(geometry(client1), geometry(client2));
 
         let win2 = clientGeometries[client2.internalId];
+        // Ensure calculated right/bottom values
+        win2.right = win2.x + win2.width;
+        win2.bottom = win2.y + win2.height;
         for (let i = 0; i < Object.keys(grid).length; i++) {
             let edge = Object.keys(grid)[i];
             switch (edge) {
 
                 case "left":
-                    if (nearWindow(win1.left, win2.right, gap.mid) &&
+                    if (nearWindow(win1.x, win2.right, gap.mid) &&
                         overlapVer(win1, win2)) {
                         debug("gap to window", edge, caption(client2), geometry(client2));
-                        let diff = win1.left - win2.right;
-                        // crop right window left edge half gap
-                        win1.x = win1.x - halfDiffL(diff) + halfGapU();
-                        win1.width = win1.width + halfDiffL(diff) - halfGapU();
-                        // crop left window right edge half gap
-                        win2.width = win2.width + halfDiffU(diff) - halfGapL();
+                        let diff = win1.x - win2.right;
+                        let halfGap = Math.floor(gap.mid / 2);
+                        // Adjust right window left edge
+                        win1.x = Math.round(win1.x - Math.floor(diff / 2) + halfGap);
+                        win1.width = Math.round(win1.width + Math.floor(diff / 2) - halfGap);
+                        win1.right = win1.x + win1.width;
+                        // Adjust left window right edge
+                        win2.width = Math.round(win2.width + Math.ceil(diff / 2) - (gap.mid - halfGap));
+                        win2.right = win2.x + win2.width;
                         debug("changed geo win1", geometry(win1));
                         debug("changed geo win2", geometry(win2));
                     }
                     break;
 
                 case "right":
-                    if (nearWindow(win2.left, win1.right, gap.mid) &&
+                    if (nearWindow(win2.x, win1.right, gap.mid) &&
                         overlapVer(win1, win2)) {
                         debug("gap to window", edge, caption(client2), geometry(client2));
-                        let diff = win2.left - (win1.right + 1);
-                        // crop left window right edge half gap
-                        win1.width = win1.width + halfDiffU(diff) - halfGapL();
-                        // crop right window left edge half gap
-                        win2.x = win2.x - halfDiffL(diff) + halfGapU();
-                        win2.width = win2.width + halfDiffL(diff) - halfGapU();
+                        let diff = win2.x - win1.right;
+                        let halfGap = Math.floor(gap.mid / 2);
+                        // Adjust left window right edge
+                        win1.width = Math.round(win1.width + Math.ceil(diff / 2) - (gap.mid - halfGap));
+                        win1.right = win1.x + win1.width;
+                        // Adjust right window left edge
+                        win2.x = Math.round(win2.x - Math.floor(diff / 2) + halfGap);
+                        win2.width = Math.round(win2.width + Math.floor(diff / 2) - halfGap);
+                        win2.right = win2.x + win2.width;
                         debug("changed geo win1", geometry(win1));
                         debug("changed geo win2", geometry(win2));
                     }
                     break;
 
                 case "top":
-                    if (nearWindow(win1.top, win2.bottom, gap.mid) &&
+                    if (nearWindow(win1.y, win2.bottom, gap.mid) &&
                         overlapHor(win1, win2)) {
                         debug("gap to window", edge, caption(client2), geometry(client2));
-                        let diff = win1.top - win2.bottom;
-                        // crop bottom window top edge half gap
-                        win1.y = win1.y - halfDiffL(diff) + halfGapU();
-                        win1.height = win1.height + halfDiffL(diff) - halfGapU();
-                        // crop top window bottom edge half gap
-                        win2.height = win2.height + halfDiffU(diff) - halfGapL();
+                        let diff = win1.y - win2.bottom;
+                        let halfGap = Math.floor(gap.mid / 2);
+                        // Adjust bottom window top edge
+                        win1.y = Math.round(win1.y - Math.floor(diff / 2) + halfGap);
+                        win1.height = Math.round(win1.height + Math.floor(diff / 2) - halfGap);
+                        win1.bottom = win1.y + win1.height;
+                        // Adjust top window bottom edge
+                        win2.height = Math.round(win2.height + Math.ceil(diff / 2) - (gap.mid - halfGap));
+                        win2.bottom = win2.y + win2.height;
                         debug("changed geo win1", geometry(win1));
                         debug("changed geo win2", geometry(win2));
                     }
                     break;
 
                 case "bottom":
-                    if (nearWindow(win2.top, win1.bottom, gap.mid) &&
+                    if (nearWindow(win2.y, win1.bottom, gap.mid) &&
                         overlapHor(win1, win2)) {
                         debug("gap to window", edge, caption(client2), geometry(client2));
-                        let diff = win2.top - (win1.bottom + 1);
-                        // crop top window bottom edge half gap
-                        win1.height = win1.height + halfDiffU(diff) - halfGapL();
-                        // crop bottom window top edge half gap
-                        win2.y = win2.y - halfDiffL(diff) + halfGapU();
-                        win2.height = win2.height + halfDiffL(diff) - halfGapU();
+                        let diff = win2.y - win1.bottom;
+                        let halfGap = Math.floor(gap.mid / 2);
+                        // Adjust top window bottom edge
+                        win1.height = Math.round(win1.height + Math.ceil(diff / 2) - (gap.mid - halfGap));
+                        win1.bottom = win1.y + win1.height;
+                        // Adjust bottom window top edge
+                        win2.y = Math.round(win2.y - Math.floor(diff / 2) + halfGap);
+                        win2.height = Math.round(win2.height + Math.floor(diff / 2) - halfGap);
+                        win2.bottom = win2.y + win2.height;
                         debug("changed geo win1", geometry(win1));
                         debug("changed geo win2", geometry(win2));
                     }
@@ -493,10 +526,12 @@ function nearArea(actual, expected_closed, expected_gapped, gap) {
 }
 
 function nearWindow(win1, win2, gap) {
-    let tolerance = gap;
-    return win1 - win2 <= tolerance
-        && win1 - win2 >= 0
-        && win1 - win2 != gap;
+    // Increase tolerance slightly to account for application-specific quirks
+    let tolerance = gap + 2;
+    let actualGap = win1 - win2;
+    return actualGap <= tolerance
+        && actualGap >= -2
+        && Math.abs(actualGap - gap) > 1;
 }
 
 // horizontal/vertical overlap
