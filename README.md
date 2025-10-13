@@ -14,7 +14,14 @@ Please note that this script does not do any automatic tiling. Its purpose is to
 
 ### Dependencies
 
-`kwin` on X11. 
+`kwin` on X11.
+
+#### Arch Linux
+##### packages:
+- qt6-tools
+
+##### notes:
+- the install script needs `qdbus` to be in the path (for me, append /usr/lib/qt6/bin/ to $PATH in .bash_profile)
 
 ### Installation via graphical interface
 
