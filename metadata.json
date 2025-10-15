@@ -5,9 +5,17 @@
             {
                 "Email": "natalie_clarius@yahoo.de",
                 "Name": "Natalie Clarius"
+            },
+            {
+                "Email": "Claudio Catterina",
+                "Name": "ccatterina@proton.me"
+            },
+            {
+                "Email": "fred@frameworklabs.us",
+                "Name": "Fred McDavid"
             }
         ],
-        "Description": "Adds space around windows touching a screen edge or other window",
+        "Description": "Adds space around windows touching a screen edge or other window (updated by Claudio Catterina for Plasma 6 with some minor additional tweaks by Fred McDavid for border management improvements...NOTE that this has been forked from the original version that appears to have been abandoned.  Please see https://github.com/FredworkLemmas/kwin-tile-gaps for the latest version of this script.  Thanks!)",
         "Description[de]": "Fügt Zwischenraum um Fenster ein, die einen Bildschirmrand oder ein anderes Fenster berühren",
         "EnabledByDefault": true,
         "Icon": "preferences-system-windows",
@@ -19,7 +27,7 @@
             "KWin/Script",
             "KCModule"
         ],
-        "Version": "8.0",
+        "Version": "8.1",
         "Website": "https://store.kde.org/p/1619642"
     },
     "X-KDE-ConfigModule": "kwin/effects/configs/kcm_kwin4_genericscripted",
