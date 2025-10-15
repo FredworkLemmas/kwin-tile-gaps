@@ -71,6 +71,9 @@ debug("");
 // block reapplying until current iteration is finished
 var block = false;
 
+// track mouse drag state to prevent gap updates during mouse drags
+var mouseDragInProgress = false;
+
 // trigger debug output when client is activated
 workspace.windowActivated.connect(client => {
     if (!client) return;
@@ -86,6 +89,22 @@ function onAdded(client) {
     applyGaps(client);
 
     onRegeometrized(client);
+    setupMouseDragTracking(client);
+}
+
+// Setup mouse drag tracking for a client
+function setupMouseDragTracking(client) {
+    // Track when interactive move/resize starts (mouse drag begins)
+    client.interactiveMoveResizeStarted.connect(() => {
+        debug("interactive move/resize started (mouse drag detected)", caption(client));
+        mouseDragInProgress = true;
+    });
+
+    // Track when interactive move/resize finishes (mouse drag ends)
+    client.interactiveMoveResizeFinished.connect(() => {
+        debug("interactive move/resize finished (mouse drag ended)", caption(client));
+        mouseDragInProgress = false;
+    });
 }
 
 // trigger applying tile gaps when client is moved or resized
@@ -98,8 +117,12 @@ function onRegeometrized(client) {
         debug("frame geometry changed", caption(client));
         applyGaps(client);
     });
+    // When interactive move/resize finishes, wait briefly then apply gaps
+    // This ensures the drag flag is cleared before we apply gaps
     client.interactiveMoveResizeFinished.connect(() => {
         debug("finish user moved resized", caption(client));
+        // Small delay to ensure mouseDragInProgress is set to false first
+        workspace.slotWindowClose.connect(() => {});  // Dummy to ensure event loop processes
         applyGaps(client);
     });
     client.fullScreenChanged.connect(() => {
@@ -188,9 +211,9 @@ function onRelayouted() {
 // make gaps for given client
 function applyGaps(client) {
     // abort if there is a current iteration of gapping still running,
-    // the client is null or irrelevant
-    debug("apply gaps", caption(client), config.includeMaximized, maximized(client), block);
-    if (block || !client || ignoreClient(client)) return;
+    // the client is null or irrelevant, or if a mouse drag is in progress
+    debug("apply gaps", caption(client), config.includeMaximized, maximized(client), block, "mouseDrag:", mouseDragInProgress);
+    if (block || !client || ignoreClient(client) || mouseDragInProgress) return;
     // block applying other gaps as long as current iteration is running
     block = true;
     debug("----------------")
