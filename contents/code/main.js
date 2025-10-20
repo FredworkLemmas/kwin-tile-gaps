@@ -44,7 +44,7 @@ const debugMode = readConfig("debugMode", true);
 const fullDebugMode = readConfig("fullDebugMode", false);
 
 function debug(...args) {
-    if (debugMode) console.debug("tilegaps:", ...args);
+    if (debugMode) console.log("tilegaps:", ...args);
 }
 
 function fulldebug(...args) {
@@ -72,7 +72,10 @@ debug("");
 var block = false;
 
 // track mouse drag state to prevent gap updates during mouse drags
-var mouseDragInProgress = false;
+var mouseDragOrResizeInProgress = false;
+var mouseDragOrResizeStartingGeometry = null;
+var mouseDragOrResizeStartTime = null;
+var mouseDragOrResizeNumUpdates = null;
 
 // trigger debug output when client is activated
 workspace.windowActivated.connect(client => {
@@ -97,13 +100,13 @@ function setupMouseDragTracking(client) {
     // Track when interactive move/resize starts (mouse drag begins)
     client.interactiveMoveResizeStarted.connect(() => {
         debug("interactive move/resize started (mouse drag detected)", caption(client));
-        mouseDragInProgress = true;
+        mouseDragOrResizeInProgress = true;
     });
 
     // Track when interactive move/resize finishes (mouse drag ends)
     client.interactiveMoveResizeFinished.connect(() => {
         debug("interactive move/resize finished (mouse drag ended)", caption(client));
-        mouseDragInProgress = false;
+        mouseDragOrResizeInProgress = false;
     });
 }
 
@@ -210,10 +213,48 @@ function onRelayouted() {
 
 // make gaps for given client
 function applyGaps(client) {
+
     // abort if there is a current iteration of gapping still running,
-    // the client is null or irrelevant, or if a mouse drag is in progress
-    debug("apply gaps", caption(client), config.includeMaximized, maximized(client), block, "mouseDrag:", mouseDragInProgress);
-    if (block || !client || ignoreClient(client) || mouseDragInProgress) return;
+    // or if the client is null or irrelevant
+    if (block || !client || ignoreClient(client)) return;
+
+    // handle mouse drag or resize
+    if (mouseDragOrResizeInProgress) {
+        debug(
+        "screen:", client.screen, "x:",
+            client.x, "y:", client.y,
+            "width:", client.width,
+            "height:", client.height);
+        if (!mouseDragOrResizeStartingGeometry) {
+            mouseDragOrResizeStartTime = Date.now();
+            mouseDragOrResizeNumUpdates = 1;
+            mouseDragOrResizeStartingGeometry = {
+                'x': client.x,
+                'y': client.y,
+                'w': client.width,
+                'h': client.height,
+            };
+        }
+
+        debug(
+            "apply gaps", caption(client),
+            config.includeMaximized, maximized(client), block,
+            "mouseDrag:", mouseDragOrResizeInProgress);
+
+        // return silently if it's only been less than 750ms since
+        // we started dragging
+        if (Date.now() - mouseDragOrResizeStartTime < 750) return;
+
+        // return silently if the width and height are unchanged since
+        // we started dragging (meaning the user is dragging and not
+        // resizing the window)
+        if (client.width == mouseDragOrResizeStartingGeometry.w &&
+            client.height == mouseDragOrResizeStartingGeometry.h) return;
+
+    }
+    else if (mouseDragOrResizeStartingGeometry) {
+        mouseDragOrResizeStartingGeometry = null;
+    }
     // block applying other gaps as long as current iteration is running
     block = true;
     debug("----------------")
