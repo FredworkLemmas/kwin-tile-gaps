@@ -1,14 +1,30 @@
 # Window Gaps
 
-Extension for KDE's window manager to add space around windows touching a screen edge or other window.
+Window Gaps is an extension for KDE's window manager to add space around windows
+touching a screen edge or other window.
 
 The size of the gap and the layouts and applications to be gapped are configurable.
 
-Please note that this script does not do any automatic tiling. Its purpose is to reshape windows that have been manually positioned with the stock KWin window management system.
+Please note that this script does not do any automatic tiling. Its purpose is to
+reshape windows that have been manually positioned with the stock KWin window
+management system.
 
 ![screenshot](.img/screenshot.png)
 
 <img src=".img/config.png" alt="config" height="554"/>
+
+## This is a fork!
+The original project is [here](https://github.com/nclarius/tile-gaps).
+
+The original project repo appears to be abandoned with no activity since early 2023.
+
+There was a PR that was never merged, so I (Fred) decided to fork the project, apply the
+forgotten PR and fix a few things that bugged me about the Plasma 5 version.
+
+It's now working pretty well in Plasma 6 and I've fixed the issues I was having with
+major layout changes happening whenever I dragged a window across multiple screen,
+but it is an otherwise faithful attempt at working version for the KDE/Plasma 6
+environment. Enjoy!
 
 ## Installation
 
@@ -21,7 +37,10 @@ Please note that this script does not do any automatic tiling. Its purpose is to
 - qt6-tools
 
 ##### notes:
-- the install script needs `qdbus` to be in the path (for me, append /usr/lib/qt6/bin/ to $PATH in .bash_profile)
+- the install script needs `qdbus` to be in the path (for me, append
+  /usr/lib/qt6/bin/ to $PATH in .bash_profile)
+- the docs are not accurate for making this available in the KDE app store, so
+  installation is manual: `sh ./install.sh`
 
 ### Installation via graphical interface
 
