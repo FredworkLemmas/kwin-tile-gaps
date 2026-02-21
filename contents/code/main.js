@@ -6,6 +6,68 @@ GNU General Public License v3.0
 
 
 ///////////////////////
+// compatibility
+///////////////////////
+
+const isPlasma6 = (typeof workspace.windowList === 'function');
+
+function getWindowOutput(window) {
+    if (window.output !== undefined) return window.output;
+    if (window.screen !== undefined) return window.screen;
+    return null;
+}
+
+function getActiveOutput() {
+    if (workspace.activeOutput !== undefined) return workspace.activeOutput;
+    if (workspace.activeScreen !== undefined) return workspace.activeScreen;
+    return null;
+}
+
+function getWindowDesktops(window) {
+    if (window.desktops !== undefined) return window.desktops;
+    if (window.desktop !== undefined) return [window.desktop];
+    return [];
+}
+
+function getCurrentDesktop() {
+    if (workspace.currentDesktop !== undefined) return workspace.currentDesktop;
+    return null;
+}
+
+function onSameOutput(window1, window2) {
+    return getWindowOutput(window1) == getWindowOutput(window2);
+}
+
+function onSameDesktop(window1, window2) {
+    if (window1.onAllDesktops || window2.onAllDesktops) return true;
+    const desktops1 = getWindowDesktops(window1);
+    const desktops2 = getWindowDesktops(window2);
+    for (let d1 of desktops1) {
+        for (let d2 of desktops2) {
+            if (d1 == d2) return true;
+        }
+    }
+    return false;
+}
+
+function copyGeometry(geometry) {
+    return {
+        x: geometry.x,
+        y: geometry.y,
+        width: geometry.width,
+        height: geometry.height,
+        left: geometry.x,
+        top: geometry.y,
+        right: geometry.x + geometry.width,
+        bottom: geometry.y + geometry.height
+    };
+}
+
+function geometriesEqual(g1, g2) {
+    return g1.x == g2.x && g1.y == g2.y && g1.width == g2.width && g1.height == g2.height;
+}
+
+///////////////////////
 // configuration
 ///////////////////////
 const gap = {
@@ -204,6 +266,12 @@ function onRelayouted() {
             applyGapsAll();
         }
     });
+    if (workspace.outputOrderChanged !== undefined) {
+        workspace.outputOrderChanged.connect(() => {
+            debug("output order changed");
+            applyGapsAll();
+        });
+    }
 }
 
 
@@ -221,7 +289,7 @@ function applyGaps(client) {
     // handle mouse drag or resize
     if (mouseDragOrResizeInProgress) {
         debug(
-        "screen:", client.screen, "x:",
+        "screen:", getWindowOutput(client), "x:",
             client.x, "y:", client.y,
             "width:", client.width,
             "height:", client.height);
@@ -263,7 +331,7 @@ function applyGaps(client) {
 
     const clientGeometries = workspace.windowList().reduce((acc, c) => {
         if (!ignoreClient(c)) {
-            acc[c.internalId] = Object.assign({}, c.frameGeometry);
+            acc[c.internalId] = copyGeometry(c.frameGeometry);
         }
         return acc;
     }, {});
@@ -272,7 +340,7 @@ function applyGaps(client) {
     applyGapsWindows(client, clientGeometries);
 
     for (const c of workspace.windowList()) {
-        if (c.internalId in clientGeometries && c.frameGeometry != clientGeometries[c.internalId]) {
+        if (c.internalId in clientGeometries && !geometriesEqual(c.frameGeometry, clientGeometries[c.internalId])) {
             debug("set geometry", caption(c), geometry(clientGeometries[c.internalId]));
             c.frameGeometry = clientGeometries[c.internalId];
         }
@@ -289,12 +357,16 @@ function applyGapsArea(client, clientGeometries) {
     debug("area", geometry(area));
     let grid = getGrid(client);
     let anchored = {"left": false, "right": false, "top": false, "bottom": false};
-    let gridded = Object.assign({}, clientGeometry);
-    let edged = Object.assign({}, clientGeometry);
+    let gridded = copyGeometry(clientGeometry);
+    let edged = copyGeometry(clientGeometry);
 
     // Ensure we're working with calculated right/bottom values
+    gridded.left = gridded.x;
+    gridded.top = gridded.y;
     gridded.right = gridded.x + gridded.width;
     gridded.bottom = gridded.y + gridded.height;
+    edged.left = edged.x;
+    edged.top = edged.y;
     edged.right = edged.x + edged.width;
     edged.bottom = edged.y + edged.height;
 
@@ -367,10 +439,10 @@ function applyGapsArea(client, clientGeometries) {
     }
     // apply geo gapped on inner anchors if client is anchored on every side,
     // otherwise geo gapped on outer edges
-    if (Object.keys(grid).every((edge) => anchored[edge]) && clientGeometry != gridded) {
+    if (Object.keys(grid).every((edge) => anchored[edge]) && !geometriesEqual(clientGeometry, gridded)) {
         debug("set grid geometry", geometry(gridded));
         clientGeometries[client.internalId] = gridded;
-    } else if (clientGeometry != edged) {
+    } else if (!geometriesEqual(clientGeometry, edged)) {
         debug("set edge geometry", geometry(edged));
         clientGeometries[client.internalId] = edged;
     }
@@ -382,6 +454,8 @@ function applyGapsWindows(client1, clientGeometries) {
     let win1 = clientGeometries[client1.internalId];
 
     // Ensure calculated right/bottom values
+    win1.left = win1.x;
+    win1.top = win1.y;
     win1.right = win1.x + win1.width;
     win1.bottom = win1.y + win1.height;
 
@@ -396,6 +470,8 @@ function applyGapsWindows(client1, clientGeometries) {
 
         let win2 = clientGeometries[client2.internalId];
         // Ensure calculated right/bottom values
+        win2.left = win2.x;
+        win2.top = win2.y;
         win2.right = win2.x + win2.width;
         win2.bottom = win2.y + win2.height;
         for (let i = 0; i < Object.keys(grid).length; i++) {
@@ -411,6 +487,7 @@ function applyGapsWindows(client1, clientGeometries) {
                         // Adjust right window left edge
                         win1.x = Math.round(win1.x - Math.floor(diff / 2) + halfGap);
                         win1.width = Math.round(win1.width + Math.floor(diff / 2) - halfGap);
+                        win1.left = win1.x;
                         win1.right = win1.x + win1.width;
                         // Adjust left window right edge
                         win2.width = Math.round(win2.width + Math.ceil(diff / 2) - (gap.mid - halfGap));
@@ -432,6 +509,7 @@ function applyGapsWindows(client1, clientGeometries) {
                         // Adjust right window left edge
                         win2.x = Math.round(win2.x - Math.floor(diff / 2) + halfGap);
                         win2.width = Math.round(win2.width + Math.floor(diff / 2) - halfGap);
+                        win2.left = win2.x;
                         win2.right = win2.x + win2.width;
                         debug("changed geo win1", geometry(win1));
                         debug("changed geo win2", geometry(win2));
@@ -447,6 +525,7 @@ function applyGapsWindows(client1, clientGeometries) {
                         // Adjust bottom window top edge
                         win1.y = Math.round(win1.y - Math.floor(diff / 2) + halfGap);
                         win1.height = Math.round(win1.height + Math.floor(diff / 2) - halfGap);
+                        win1.top = win1.y;
                         win1.bottom = win1.y + win1.height;
                         // Adjust top window bottom edge
                         win2.height = Math.round(win2.height + Math.ceil(diff / 2) - (gap.mid - halfGap));
@@ -468,6 +547,7 @@ function applyGapsWindows(client1, clientGeometries) {
                         // Adjust bottom window top edge
                         win2.y = Math.round(win2.y - Math.floor(diff / 2) + halfGap);
                         win2.height = Math.round(win2.height + Math.floor(diff / 2) - halfGap);
+                        win2.top = win2.y;
                         win2.bottom = win2.y + win2.height;
                         debug("changed geo win1", geometry(win1));
                         debug("changed geo win2", geometry(win2));
@@ -577,24 +657,23 @@ function getGrid(client) {
 
 // a client is maximized iff its geometry is equal to the maximize area
 function maximized(client) {
-    return client.frameGeometry == workspace.clientArea(KWin.MaximizeArea, workspace.activeScreen, workspace.currentDesktop);
+    return geometriesEqual(client.frameGeometry, workspace.clientArea(KWin.MaximizeArea, client));
 }
 
 // a coordinate is close to another iff
 // the difference is within the tolerance margin but non-zero
 
 function nearArea(actual, expected_closed, expected_gapped, gap) {
-    let tolerance = gap;
+    let tolerance = gap + 2;
     return (Math.abs(actual - expected_closed) <= tolerance
         || Math.abs(actual - expected_gapped) <= tolerance);
 }
 
 function nearWindow(win1, win2, gap) {
     // Increase tolerance slightly to account for application-specific quirks
-    let tolerance = gap + 2;
-    let actualGap = win1 - win2;
+    let tolerance = gap + 5;
+    let actualGap = Math.abs(win1 - win2);
     return actualGap <= tolerance
-        && actualGap >= -2
         && Math.abs(actualGap - gap) > 1;
 }
 
@@ -657,9 +736,8 @@ function ignoreClient(client) {
 function ignoreOther(client1, client2) {
     return ignoreClient(client2) // excluded
         || client2 == client1 // identicalb
-        || !(client2.desktop == client1.desktop // same desktop
-            || client2.onAllDesktops || client1.onAllDesktops)
-        || !(client2.screen == client1.screen) // different screen
+        || !onSameDesktop(client1, client2) // different desktop
+        || !onSameOutput(client1, client2) // different screen
         || client2.minimized; // minimized
 }
 
