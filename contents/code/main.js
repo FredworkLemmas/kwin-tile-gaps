@@ -1,6 +1,7 @@
 /*
 KWin Script Window Gaps
-(C) 2021-2022 Natalie Clarius <natalie_clarius@yahoo.de>
+(C) 2021-2023 Natalie Clarius <natalie_clarius@yahoo.de>
+(C) 2026 Fred McDavid <fred@frameworklabs.us>
 GNU General Public License v3.0
 */
 

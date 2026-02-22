@@ -1,0 +1,5 @@
+[ 9.0.0 ]
+- Updated for KDE Plasma 6
+- Verified compatibility with Plasma 6.5 and 6.6
+- Improved border management
+- Updated repository and metadata for current maintenance
