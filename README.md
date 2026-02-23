@@ -16,6 +16,10 @@ The original project repo appears to be abandoned with no activity since early 2
 
 It has been updated for Plasma 6 and is known to work in Plasma 6.5 and Plasma 6.6. It is no longer compatible with Plasma 5.
 
+So far, I've gotten the script to work as intended on Plasma 6.5 and 6.6 and I've addressed a few bugs around border consistency and drag behaviors.
+
+I have new features planned, including cascaded windows in each tile section and new hotkey behaviors.
+
 ## Installation
 
 ### Dependencies
