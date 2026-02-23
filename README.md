@@ -1,6 +1,6 @@
-# Window Gaps
+# Interstitia
 
-Window Gaps is an extension for KDE's window manager to add space around windows touching a screen edge or other window.
+Interstitia is an extension for KDE's window manager to add space around windows touching a screen edge or other window.
 
 The size of the gap and the layouts and applications to be gapped are configurable.
 
@@ -37,7 +37,7 @@ I have new features planned, including cascaded windows in each tile section and
 
 **Please make sure to select the most recent version** in the installation process.
 
-1. Install the script via *System Settings* > *Window Management* > *KWin Scripts* > *Get New Scripts …* > search for *Window Gaps* > *Install*.
+1. Install the script via *System Settings* > *Window Management* > *KWin Scripts* > *Get New Scripts …* > search for *Interstitia* > *Install*.
 2. Enable the script by activating its checkbox, and apply the settings.
 
 ### Installation via command line
@@ -50,7 +50,7 @@ cd kwin-tile-gaps
 
 ## Configuration
 
-*System Settings* > *Window Management* > *KWin Scripts* > *Window Gaps* > configuration button.
+*System Settings* > *Window Management* > *KWin Scripts* > *Interstitia* > configuration button.
 
 You may need to uncheck the checkbox for the script, apply the settings, recheck, and reapply in order for the changes to take effect.
 

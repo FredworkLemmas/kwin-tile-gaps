@@ -19,26 +19,25 @@
         "Description[de]": "Fügt Zwischenraum um Fenster ein, die einen Bildschirmrand oder ein anderes Fenster berühren. Aktualisiert für Plasma 6. Unterstützt Plasma 6.5 und 6.6.",
         "EnabledByDefault": true,
         "Icon": "preferences-system-windows",
-        "Id": "tilegaps",
+        "Id": "interstitia",
         "License": "GPLv3.0",
-        "Name": "Window Gaps",
-        "Name[de]": "Fenster-Fugen",
+        "Name": "Interstitia",
+        "Name[de]": "Interstitia",
         "ServiceTypes": [
             "KWin/Script",
             "KCModule"
         ],
-        "Version": "9.0",
+        "Version": "1.0.0",
         "Website": "https://github.com/FredworkLemmas/kwin-tile-gaps"
     },
-    "X-KDE-ConfigModule": "kcm_kwin4_genericscripted",
+    "X-KDE-ConfigModule": "kwin/effects/configs/kcm_kwin4_genericscripted",
+    "X-KDE-KWin-Script-Config": "true",
+    "X-KDE-PluginInfo-Name": "interstitia",
     "X-KDE-ParentComponents": [
-        "tilegaps"
+        "interstitia"
     ],
-    "X-KDE-PluginKeyword": "tilegaps",
-    "X-KDE-PluginInfo-Author": "Fred McDavid",
-    "X-KDE-PluginInfo-Email": "fred@frameworklabs.us",
-    "X-KDE-PluginInfo-Name": "tilegaps",
-    "X-KDE-PluginInfo-Version": "9.0",
+    "X-KDE-PluginKeyword": "interstitia",
+    "X-KDE-PluginInfo-Version": "1.0.0",
     "X-KDE-PluginInfo-Website": "https://github.com/FredworkLemmas/kwin-tile-gaps",
     "X-KDE-PluginInfo-Category": "KWin Script",
     "X-KDE-PluginInfo-License": "GPLv3",

@@ -1,5 +1,5 @@
 /*
-KWin Script Window Gaps
+KWin Script Interstitia
 (C) 2021-2023 Natalie Clarius <natalie_clarius@yahoo.de>
 (C) 2026 Fred McDavid <fred@frameworklabs.us>
 GNU General Public License v3.0
@@ -71,6 +71,10 @@ function geometriesEqual(g1, g2) {
 ///////////////////////
 // configuration
 ///////////////////////
+function readConfig(key, defaultValue) {
+    return KWin.readConfig(key, defaultValue);
+}
+
 const gap = {
     // size of gap to screen edges
     left: readConfig("gapLeft", 8),
@@ -107,12 +111,12 @@ const debugMode = readConfig("debugMode", true);
 const fullDebugMode = readConfig("fullDebugMode", false);
 
 function debug(...args) {
-    if (debugMode) console.log("tilegaps:", ...args);
+    if (debugMode) console.log("interstitia:", ...args);
 }
 
 function fulldebug(...args) {
     if (fullDebugMode) {
-        console.debug("tilegaps:", ...args);
+        console.debug("interstitia:", ...args);
     }
 }
 
