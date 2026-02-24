@@ -1,0 +1,9 @@
+[ 1.0.0 ]
+- Renamed project to Interstitia
+- Reset versioning to 1.0.0
+
+[ 9.0.0 ]
+- Updated for KDE Plasma 6
+- Verified compatibility with Plasma 6.5 and 6.6
+- Improved border management
+- Updated repository and metadata for current maintenance
