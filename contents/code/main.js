@@ -96,56 +96,70 @@ function readConfigValue(key, defaultValue) {
     try {
         if (typeof readConfig === 'function') {
             // Standard KWin Scripting API
-            // Try with prefix first (often used in Plasma 6)
-            var gVal = readConfig("General/" + key, "MISSING");
+            // Try Script-interstitia specifically (this matches our main.xml group)
+            var gVal = readConfig(key, "MISSING", "Script-interstitia");
             if (gVal !== "MISSING" && gVal !== undefined) {
                 val = gVal;
-                source = "readConfig(General/key)";
+                source = "readConfig(Script-interstitia)";
             } else {
-                // Try [General] group
-                gVal = readConfig(key, "MISSING", "General");
+                // Try no group (base section)
+                gVal = readConfig(key, "MISSING");
                 if (gVal !== "MISSING" && gVal !== undefined) {
                     val = gVal;
-                    source = "readConfig(General)";
+                    source = "readConfig(no-group)";
                 } else {
-                    // Try no group
-                    gVal = readConfig(key, "MISSING");
+                    // Try with General prefix (old Plasma 6 style or from main.xml group)
+                    gVal = readConfig("General/" + key, "MISSING");
                     if (gVal !== "MISSING" && gVal !== undefined) {
                         val = gVal;
-                        source = "readConfig(no-group)";
+                        source = "readConfig(General/key)";
                     } else {
-                        // Try the full hierarchical group as strings
-                        // [Script-interstitia][General]
-                        gVal = readConfig(key, "MISSING", "Script-interstitia", "General");
+                        // Try [General] group
+                        gVal = readConfig(key, "MISSING", "General");
                         if (gVal !== "MISSING" && gVal !== undefined) {
                             val = gVal;
-                            source = "readConfig(General in Script-interstitia)";
+                            source = "readConfig(General)";
+                        } else {
+                            // Try [Script-interstitia][General]
+                            gVal = readConfig(key, "MISSING", "Script-interstitia", "General");
+                            if (gVal !== "MISSING" && gVal !== undefined) {
+                                val = gVal;
+                                source = "readConfig(General in Script-interstitia)";
+                            }
                         }
                     }
                 }
             }
         } else if (typeof KWin !== 'undefined' && typeof KWin.readConfig === 'function') {
             // KWin.readConfig API
-            // Try with prefix first
-            var gVal = KWin.readConfig("General/" + key, "MISSING");
+            // Try Script-interstitia
+            var gVal = KWin.readConfig(key, "MISSING", "Script-interstitia");
             if (gVal !== "MISSING" && gVal !== undefined) {
                 val = gVal;
-                source = "KWin.readConfig(General/key)";
+                source = "KWin.readConfig(Script-interstitia)";
             } else {
-                var gVal = KWin.readConfig(key, "MISSING", "General");
+                // Try no group first
+                gVal = KWin.readConfig(key, "MISSING");
                 if (gVal !== "MISSING" && gVal !== undefined) {
                     val = gVal;
-                    source = "KWin.readConfig(General)";
+                    source = "KWin.readConfig(no-group)";
                 } else {
-                    gVal = KWin.readConfig(key, "MISSING");
+                    // Try with prefix
+                    gVal = KWin.readConfig("General/" + key, "MISSING");
                     if (gVal !== "MISSING" && gVal !== undefined) {
                         val = gVal;
-                        source = "KWin.readConfig(no-group)";
+                        source = "KWin.readConfig(General/key)";
                     } else {
-                        gVal = KWin.readConfig(key, "MISSING", "Script-interstitia", "General");
+                        gVal = KWin.readConfig(key, "MISSING", "General");
                         if (gVal !== "MISSING" && gVal !== undefined) {
                             val = gVal;
-                            source = "KWin.readConfig(General in Script-interstitia)";
+                            source = "KWin.readConfig(General)";
+                        } else {
+                            gVal = KWin.readConfig(key, "MISSING", "Script-interstitia", "General");
+                            if (gVal !== "MISSING" && gVal !== undefined) {
+                                val = gVal;
+                                source = "KWin.readConfig(General in Script-interstitia)";
+                            }
                         }
                     }
                 }
