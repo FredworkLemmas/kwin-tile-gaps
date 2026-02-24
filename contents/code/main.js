@@ -11,6 +11,7 @@ GNU General Public License v3.0
 ///////////////////////
 
 const isPlasma6 = (typeof workspace.windowList === 'function');
+console.log("interstitia: main.js execution started, isPlasma6:", isPlasma6);
 
 function getWindowOutput(window) {
     if (window.output !== undefined) return window.output;
@@ -71,44 +72,10 @@ function geometriesEqual(g1, g2) {
 ///////////////////////
 // configuration
 ///////////////////////
-function readConfig(key, defaultValue) {
-    return KWin.readConfig(key, defaultValue);
-}
 
-const gap = {
-    // size of gap to screen edges
-    left: readConfig("gapLeft", 8),
-    right: readConfig("gapRight", 8),
-    top: readConfig("gapTop", 8),
-    bottom: readConfig("gapBottom", 8),
-    // size of gap between windows
-    mid: readConfig("gapMid", 8)
-};
-
-const panel = {
-    // presence of panels on screen edges
-    left: readConfig("panelLeft", false),
-    right: readConfig("panelRight", false),
-    top: readConfig("panelTop", false),
-    bottom: readConfig("panelBottom", false),
-};
-
-const config = {
-    // layouts to apply gaps to
-    includeMaximized: readConfig("includeMaximized", false),
-    // list of excluded/included applications
-    excludeMode: readConfig("excludeMode", true),
-    includeMode: readConfig("includeMode", false),
-    applications: readConfig("applications", "").toLowerCase().split("\n")
-};
-
-
-///////////////////////
-// initialization
-///////////////////////
-
-const debugMode = readConfig("debugMode", true);
-const fullDebugMode = readConfig("fullDebugMode", false);
+// initial debug flags - must be before any debug() calls
+var debugMode = true;
+var fullDebugMode = false;
 
 function debug(...args) {
     if (debugMode) console.log("interstitia:", ...args);
@@ -120,16 +87,135 @@ function fulldebug(...args) {
     }
 }
 
+console.log("interstitia: main.js execution started at " + new Date().toISOString());
+
+function readConfigValue(key, defaultValue) {
+    var val = defaultValue;
+    var source = "default";
+    
+    try {
+        if (typeof readConfig === 'function') {
+            // Standard KWin Scripting API
+            // Try with prefix first (often used in Plasma 6)
+            var gVal = readConfig("General/" + key, "MISSING");
+            if (gVal !== "MISSING" && gVal !== undefined) {
+                val = gVal;
+                source = "readConfig(General/key)";
+            } else {
+                // Try [General] group
+                gVal = readConfig(key, "MISSING", "General");
+                if (gVal !== "MISSING" && gVal !== undefined) {
+                    val = gVal;
+                    source = "readConfig(General)";
+                } else {
+                    // Try no group
+                    gVal = readConfig(key, "MISSING");
+                    if (gVal !== "MISSING" && gVal !== undefined) {
+                        val = gVal;
+                        source = "readConfig(no-group)";
+                    } else {
+                        // Try the full hierarchical group as strings
+                        // [Script-interstitia][General]
+                        gVal = readConfig(key, "MISSING", "Script-interstitia", "General");
+                        if (gVal !== "MISSING" && gVal !== undefined) {
+                            val = gVal;
+                            source = "readConfig(General in Script-interstitia)";
+                        }
+                    }
+                }
+            }
+        } else if (typeof KWin !== 'undefined' && typeof KWin.readConfig === 'function') {
+            // KWin.readConfig API
+            // Try with prefix first
+            var gVal = KWin.readConfig("General/" + key, "MISSING");
+            if (gVal !== "MISSING" && gVal !== undefined) {
+                val = gVal;
+                source = "KWin.readConfig(General/key)";
+            } else {
+                var gVal = KWin.readConfig(key, "MISSING", "General");
+                if (gVal !== "MISSING" && gVal !== undefined) {
+                    val = gVal;
+                    source = "KWin.readConfig(General)";
+                } else {
+                    gVal = KWin.readConfig(key, "MISSING");
+                    if (gVal !== "MISSING" && gVal !== undefined) {
+                        val = gVal;
+                        source = "KWin.readConfig(no-group)";
+                    } else {
+                        gVal = KWin.readConfig(key, "MISSING", "Script-interstitia", "General");
+                        if (gVal !== "MISSING" && gVal !== undefined) {
+                            val = gVal;
+                            source = "KWin.readConfig(General in Script-interstitia)";
+                        }
+                    }
+                }
+            }
+        } else if (typeof options !== 'undefined' && options[key] !== undefined) {
+            val = options[key];
+            source = "options";
+        }
+    } catch (e) {
+        console.log("interstitia: error reading config key " + key + ": " + e);
+    }
+    
+    // Check if debugMode is defined before using it (it's loaded first)
+    if (typeof debugMode !== 'undefined' && debugMode) {
+        console.log("interstitia: CONFIG_CHECK [" + key + "] = " + val + " (" + source + ")");
+    }
+    return val;
+}
+
+const gap = { left: 8, right: 8, top: 8, bottom: 8, mid: 8 };
+const panel = { left: false, right: false, top: false, bottom: false };
+const config = { includeMaximized: false, excludeMode: true, includeMode: false, applications: [] };
+
+function loadConfig() {
+    console.log("interstitia: loadConfig() CALLED");
+    
+    debugMode = Boolean(readConfigValue("debugMode", true));
+    fullDebugMode = Boolean(readConfigValue("fullDebugMode", false));
+
+    gap.left = parseInt(readConfigValue("gapLeft", 8));
+    gap.right = parseInt(readConfigValue("gapRight", 8));
+    gap.top = parseInt(readConfigValue("gapTop", 8));
+    gap.bottom = parseInt(readConfigValue("gapBottom", 8));
+    gap.mid = parseInt(readConfigValue("gapMid", 8));
+
+    panel.left = Boolean(readConfigValue("panelLeft", false));
+    panel.right = Boolean(readConfigValue("panelRight", false));
+    panel.top = Boolean(readConfigValue("panelTop", false));
+    panel.bottom = Boolean(readConfigValue("panelBottom", false));
+
+    config.includeMaximized = Boolean(readConfigValue("includeMaximized", false));
+    config.excludeMode = Boolean(readConfigValue("excludeMode", true));
+    config.includeMode = Boolean(readConfigValue("includeMode", false));
+    config.applications = String(readConfigValue("applications", "")).toLowerCase().split("\n");
+
+    console.log("interstitia: loaded sizes (l/r/t/b/m):",
+        gap.left, gap.right, gap.top, gap.bottom, gap.mid);
+}
+
+loadConfig();
+
+// In Plasma 6, we can listen to workspace.configChanged if available
+if (workspace.configChanged !== undefined) {
+    workspace.configChanged.connect(() => {
+        console.log("interstitia: config changed signal received");
+        loadConfig();
+        applyGapsAll();
+    });
+}
+
+///////////////////////
+// initialization
+///////////////////////
+
 debug("intializing");
-debug("sizes (l/r/t/b/m):",
-    gap.left, gap.right, gap.top, gap.bottom, gap.mid);
-debug("panels (l/r/t/b):",
-    panel.left, panel.right, panel.top, panel.bottom);
-debug("layout:",
-    "maximized:", config.includeMaximized);
-debug("applications:",
-    config.excludeMode ? "exclude" : "include", String(config.applications));
 debug("");
+
+if (typeof registerShortcut === 'undefined') {
+    console.log("interstitia: main.js execution started");
+}
 
 ///////////////////////
 // set up triggers
@@ -179,6 +265,7 @@ function setupMouseDragTracking(client) {
 
 // trigger applying tile gaps when client is moved or resized
 function onRegeometrized(client) {
+
     client.moveResizedChanged.connect(() => {
         debug("move resized changed", caption(client));
         applyGaps(client);

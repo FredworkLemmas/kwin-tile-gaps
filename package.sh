@@ -14,7 +14,6 @@ zip -rq "$package"'.kwinscript'  \
     install.sh \
     uninstall.sh \
     README.md \
-    README.bbcode \
 	LICENSE
 echo 'generated kwinscript package'
 
